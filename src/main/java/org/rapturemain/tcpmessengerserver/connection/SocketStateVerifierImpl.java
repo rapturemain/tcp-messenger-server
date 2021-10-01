@@ -1,6 +1,6 @@
 package org.rapturemain.tcpmessengerserver.connection;
 
-import org.rapturemain.tcpmessengermessageframework.message.messages.request.PingRequest;
+import org.rapturemain.tcpmessengermessageframework.message.messages.system.PingRequest;
 import org.rapturemain.tcpmessengerserver.messagebroker.MessageBroker;
 import org.rapturemain.tcpmessengerserver.messagebroker.MessagePublisher;
 import org.springframework.beans.factory.annotation.Autowired;
