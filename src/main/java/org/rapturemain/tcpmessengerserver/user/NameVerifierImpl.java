@@ -1,9 +1,6 @@
 package org.rapturemain.tcpmessengerserver.user;
 
-import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
 
 @Component
 public class NameVerifierImpl extends Verifier<Name> implements NameVerifier {

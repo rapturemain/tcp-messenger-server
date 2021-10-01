@@ -189,6 +189,9 @@ public class ConnectionHandlerImpl implements ConnectionHandler {
     }
 
     private void handleRegistrationMessage(Socket socket, RegistrationRequestMessage message) throws SocketRegistrationException {
+        if (message.getName() == null || message.getName().getString() == null || message.getName().getString().equals("")) {
+            throw new SocketRegistrationException();
+        }
         User user = User.builder()
                 .name(new Name(message.getName().getString()))
                 .build();

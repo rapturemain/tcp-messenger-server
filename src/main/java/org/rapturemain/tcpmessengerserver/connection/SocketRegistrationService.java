@@ -1,9 +1,7 @@
 package org.rapturemain.tcpmessengerserver.connection;
 
-import org.rapturemain.tcpmessengerserver.user.NameUnavailableException;
 import org.rapturemain.tcpmessengerserver.user.User;
 
-import javax.naming.NameNotFoundException;
 import java.net.Socket;
 
 public interface SocketRegistrationService {
