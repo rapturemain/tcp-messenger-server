@@ -73,8 +73,8 @@ public final class MessageBrokerImpl implements MessageBroker {
         if (executor.isShutdown()) {
             return;
         }
+        Set<MessageSubscriber> ignoredSubscribers = publishers.get(publisher);
         executor.submit(() -> {
-            Set<MessageSubscriber> ignoredSubscribers = publishers.get(publisher);
             subscribers.forEach((subscriber, queue) -> {
                 if (!ignoredSubscribers.contains(subscriber)) {
                     queue.add(message);
