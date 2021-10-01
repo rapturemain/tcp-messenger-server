@@ -1,10 +1,7 @@
 package org.rapturemain.tcpmessengerserver.utils;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Value;
-
-import java.util.Objects;
 
 
 @Value
