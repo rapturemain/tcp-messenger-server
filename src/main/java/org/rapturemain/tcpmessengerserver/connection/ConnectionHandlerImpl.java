@@ -9,7 +9,9 @@ import org.rapturemain.tcpmessengermessageframework.message.messages.ChatMessage
 import org.rapturemain.tcpmessengermessageframework.message.messages.ConnectionResetMessage;
 import org.rapturemain.tcpmessengermessageframework.message.messages.Message;
 import org.rapturemain.tcpmessengermessageframework.message.messages.SystemMessage;
+import org.rapturemain.tcpmessengermessageframework.message.messages.request.PingRequest;
 import org.rapturemain.tcpmessengermessageframework.message.messages.request.RegistrationRequestMessage;
+import org.rapturemain.tcpmessengermessageframework.message.messages.response.PingResponse;
 import org.rapturemain.tcpmessengermessageframework.message.messages.response.RegistrationResponseMessage;
 import org.rapturemain.tcpmessengermessageframework.message.messages.system.UserConnectedMessage;
 import org.rapturemain.tcpmessengermessageframework.message.messages.system.UserDisconnectedMessage;
@@ -144,15 +146,21 @@ public class ConnectionHandlerImpl implements ConnectionHandler {
         }
     }
 
+    private boolean isIgnoredWhenRegistration(Message<?> message) {
+        return message instanceof PingRequest ||
+                message instanceof PingResponse;
+    }
+
     private void handleFirstRegistrationAndResponse(Socket socket, Message<?> message, MessagePublisher publisher, MessageSubscriber subscriber) throws ConnectionResetException {
         try {
-            handleFirstRegistration(socket, message);
-            publisher.publishToSubscriber(RegistrationResponseMessage.builder()
-                    .success(new BooleanEntry(true))
-                    .name(new StringEntry(socketRegistrationService.getUserForSocket(socket).getName().getName()))
-                    .timestamp(new TimestampEntry(Instant.now().toEpochMilli()))
-                    .build(), subscriber);
-            onUserRegistered(socket, publisher);
+            if (handleFirstRegistration(socket, message)) {
+                publisher.publishToSubscriber(RegistrationResponseMessage.builder()
+                        .success(new BooleanEntry(true))
+                        .name(new StringEntry(socketRegistrationService.getUserForSocket(socket).getName().getName()))
+                        .timestamp(new TimestampEntry(Instant.now().toEpochMilli()))
+                        .build(), subscriber);
+                onUserRegistered(socket, publisher);
+            }
         } catch (UnregisteredException e) {
             publisher.publishToSubscriber(RegistrationResponseMessage.builder()
                     .success(new BooleanEntry(false))
@@ -166,7 +174,10 @@ public class ConnectionHandlerImpl implements ConnectionHandler {
         }
     }
 
-    private void handleFirstRegistration(Socket socket, Message<?> message) throws UnregisteredException, SocketRegistrationException, ConnectionResetException {
+    private boolean handleFirstRegistration(Socket socket, Message<?> message) throws UnregisteredException, SocketRegistrationException, ConnectionResetException {
+        if (isIgnoredWhenRegistration(message)) {
+            return false;
+        }
         if (message instanceof SystemMessage<?>) {
             handleConnectionReset((SystemMessage<?>) message);
         }
@@ -174,6 +185,7 @@ public class ConnectionHandlerImpl implements ConnectionHandler {
             throw new UnregisteredException();
         }
         handleRegistrationMessage(socket, (RegistrationRequestMessage) message);
+        return true;
     }
 
     private void handleRegistrationMessage(Socket socket, RegistrationRequestMessage message) throws SocketRegistrationException {
