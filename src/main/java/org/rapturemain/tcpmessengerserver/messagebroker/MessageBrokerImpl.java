@@ -9,10 +9,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 @Component
 @Slf4j
@@ -66,15 +63,15 @@ public final class MessageBrokerImpl implements MessageBroker {
         log.debug("Unregistered subscriber");
     }
 
-    private void publishMessageOfPublisher(@NotNull MessagePublisher publisher, @NotNull Message<?> message) {
+    private Future<?> publishMessageOfPublisher(@NotNull MessagePublisher publisher, @NotNull Message<?> message) {
         if (!publishers.containsKey(publisher)) {
             throw new PublisherNotRegisteredException();
         }
         if (executor.isShutdown()) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
         Set<MessageSubscriber> ignoredSubscribers = publishers.get(publisher);
-        executor.submit(() -> {
+        return executor.submit(() -> {
             subscribers.forEach((subscriber, queue) -> {
                 if (!ignoredSubscribers.contains(subscriber)) {
                     queue.add(message);
@@ -84,11 +81,11 @@ public final class MessageBrokerImpl implements MessageBroker {
         });
     }
 
-    private void publishMessageToSubscriber(@NotNull Message<?> message, MessageSubscriber subscriber) {
+    private Future<?> publishMessageToSubscriber(@NotNull Message<?> message, MessageSubscriber subscriber) {
         if (executor.isShutdown()) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
-        executor.submit(() -> {
+        return executor.submit(() -> {
             ConcurrentLinkedDeque<Message<?>> queue = subscribers.get(subscriber);
             if (queue == null) {
                 throw new SubscriberNotRegisteredException();
@@ -121,13 +118,13 @@ public final class MessageBrokerImpl implements MessageBroker {
         }
 
         @Override
-        public void publishMessage(@NotNull Message<?> message) {
-            publishMessageOfPublisher(this, message);
+        public Future<?> publishMessage(@NotNull Message<?> message) {
+            return publishMessageOfPublisher(this, message);
         }
 
         @Override
-        public void publishToSubscriber(@NotNull Message<?> message, @NotNull MessageSubscriber subscriber) {
-            publishMessageToSubscriber(message, subscriber);
+        public Future<?> publishToSubscriber(@NotNull Message<?> message, @NotNull MessageSubscriber subscriber) {
+            return publishMessageToSubscriber(message, subscriber);
         }
 
         @Override

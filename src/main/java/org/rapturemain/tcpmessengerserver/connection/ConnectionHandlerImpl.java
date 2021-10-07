@@ -6,6 +6,7 @@ import org.rapturemain.tcpmessengermessageframework.message.base.BooleanEntry;
 import org.rapturemain.tcpmessengermessageframework.message.base.StringEntry;
 import org.rapturemain.tcpmessengermessageframework.message.base.TimestampEntry;
 import org.rapturemain.tcpmessengermessageframework.message.messages.Message;
+import org.rapturemain.tcpmessengermessageframework.message.messages.MessageFormatException;
 import org.rapturemain.tcpmessengermessageframework.message.messages.chat.ChatMessage;
 import org.rapturemain.tcpmessengermessageframework.message.messages.system.*;
 import org.rapturemain.tcpmessengerserver.messagebroker.MessageBroker;
@@ -23,6 +24,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.time.Instant;
 import java.util.Calendar;
 
@@ -87,12 +89,24 @@ public class ConnectionHandlerImpl implements ConnectionHandler {
                     unc.getIsWorking().set(false);
                 }
             }
+        } catch (MessageFormatException e) {
+            log.info("Client [address {}, port {}] sent wrong message, closing connection", socket.getInetAddress(), socket.getPort());
+        } catch (SocketTimeoutException e) {
+            log.info("Client [address {}, port {}] timed out, closing connection", socket.getInetAddress(), socket.getPort());
         } catch (IOException e) {
             log.info("Client [address {}, port {}] unavailable, closing connection", socket.getInetAddress(), socket.getPort());
             log.debug("Client [address {}, port {}] unavailable", socket.getInetAddress(), socket.getPort(), e);
-        } catch (ConnectionResetException connectionResetException) {
+        } catch (ConnectionResetException e) {
             log.info("Client [address {}, port {}] closed connection", socket.getInetAddress(), socket.getPort());
         } finally {
+            // First, try to tell client about connection reset
+            try {
+                publisher.publishToSubscriber(new ConnectionResetMessage(), subscriber).get();
+                handleOutput(subscriber, dos);
+            } catch (Exception e) {
+                // do nothing
+            }
+
             onUserDisconnected(socket, publisher);
 
             socketRegistrationService.unregister(socket);
