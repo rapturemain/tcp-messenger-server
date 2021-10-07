@@ -15,8 +15,6 @@ import org.rapturemain.tcpmessengerserver.messagebroker.MessageSubscriber;
 import org.rapturemain.tcpmessengerserver.user.Name;
 import org.rapturemain.tcpmessengerserver.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.io.DataInputStream;
@@ -27,9 +25,9 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.time.Instant;
 import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 
 @Component
-@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @Slf4j
 public class ConnectionHandlerImpl implements ConnectionHandler {
 
@@ -58,7 +56,7 @@ public class ConnectionHandlerImpl implements ConnectionHandler {
         DataOutputStream dos;
 
         try {
-            socket.setSoTimeout(30000);
+            socket.setSoTimeout((int) TimeUnit.SECONDS.toMillis(30));
             socketIS = socket.getInputStream();
             dis = new DataInputStream(socketIS);
             dos = new DataOutputStream(socket.getOutputStream());
