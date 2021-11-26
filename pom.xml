@@ -6,7 +6,7 @@
 
     <groupId>org.rapturemain</groupId>
     <artifactId>tcp-messenger-server</artifactId>
-    <version>21.1.0</version>
+    <version>21.2.0</version>
 
     <properties>
         <java.version>11</java.version>

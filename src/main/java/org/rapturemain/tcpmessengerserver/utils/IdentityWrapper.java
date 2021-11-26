@@ -6,7 +6,7 @@ import lombok.Value;
 
 @Value
 @AllArgsConstructor
-public class DefaultWrapper<T> {
+public class IdentityWrapper<T> {
 
     T data;
 
@@ -14,7 +14,7 @@ public class DefaultWrapper<T> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DefaultWrapper<?> that = (DefaultWrapper<?>) o;
+        IdentityWrapper<?> that = (IdentityWrapper<?>) o;
         return data == that.data;
     }
 

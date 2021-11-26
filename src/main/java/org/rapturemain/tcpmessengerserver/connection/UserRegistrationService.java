@@ -3,29 +3,27 @@ package org.rapturemain.tcpmessengerserver.connection;
 import org.rapturemain.tcpmessengerserver.user.NameUnavailableException;
 import org.rapturemain.tcpmessengerserver.user.User;
 import org.rapturemain.tcpmessengerserver.user.UserInfoVerifier;
-import org.rapturemain.tcpmessengerserver.utils.DefaultWrapper;
+import org.rapturemain.tcpmessengerserver.utils.IdentityWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.net.Socket;
+import java.nio.channels.SocketChannel;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class SocketRegistrationServiceImpl implements SocketRegistrationService {
+public class UserRegistrationService {
 
     private final UserInfoVerifier userInfoVerifier;
-
-    private final ConcurrentHashMap<DefaultWrapper<Socket>, User> sockets = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<IdentityWrapper<SocketChannel>, User> sockets = new ConcurrentHashMap<>();
 
     @Autowired
-    public SocketRegistrationServiceImpl(UserInfoVerifier userInfoVerifier) {
+    public UserRegistrationService(UserInfoVerifier userInfoVerifier) {
         this.userInfoVerifier = userInfoVerifier;
     }
 
-    @Override
-    public void register(Socket socket, User user) throws SocketRegistrationException {
-        DefaultWrapper<Socket> wrapper = new DefaultWrapper<>(socket);
+    public void register(SocketChannel socket, User user) throws SocketRegistrationException {
+        IdentityWrapper<SocketChannel> wrapper = new IdentityWrapper<>(socket);
 
         try {
             userInfoVerifier.registerUser(user);
@@ -40,9 +38,8 @@ public class SocketRegistrationServiceImpl implements SocketRegistrationService 
         }
     }
 
-    @Override
-    public void unregister(Socket socket) {
-        DefaultWrapper<Socket> wrapper = new DefaultWrapper<>(socket);
+    public void unregister(SocketChannel socket) {
+        IdentityWrapper<SocketChannel> wrapper = new IdentityWrapper<>(socket);
         if (!sockets.containsKey(wrapper)) {
             return;
         }
@@ -50,18 +47,16 @@ public class SocketRegistrationServiceImpl implements SocketRegistrationService 
         sockets.remove(wrapper);
     }
 
-    @Override
-    public User getUserForSocket(Socket socket) {
-        DefaultWrapper<Socket> wrapper = new DefaultWrapper<>(socket);
+    public User getUserForSocket(SocketChannel socket) {
+        IdentityWrapper<SocketChannel> wrapper = new IdentityWrapper<>(socket);
         if (!sockets.containsKey(wrapper)) {
             throw new NoSuchElementException();
         }
         return sockets.get(wrapper);
     }
 
-    @Override
-    public boolean isRegistered(Socket socket) {
-        DefaultWrapper<Socket> wrapper = new DefaultWrapper<>(socket);
+    public boolean isRegistered(SocketChannel socket) {
+        IdentityWrapper<SocketChannel> wrapper = new IdentityWrapper<>(socket);
         return sockets.containsKey(wrapper);
     }
 }

@@ -10,6 +10,7 @@ import javax.annotation.PostConstruct;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 @Component
 public class MessageEncoderDecoderImpl implements MessageEncoderDecoder {
@@ -30,5 +31,20 @@ public class MessageEncoderDecoderImpl implements MessageEncoderDecoder {
     @Override
     public @Nullable Message<?> decode(@NotNull DataInputStream dataInputStream) throws IOException {
         return encoderDecoder.decode(dataInputStream);
+    }
+
+    @Override
+    public @Nullable Message<?> decode(byte[] bytes) throws IOException {
+        return encoderDecoder.decode(bytes);
+    }
+
+    @Override
+    public boolean canBeDecoded(byte[] bytes, @NotNull ByteBuffer byteBuffer) {
+        return encoderDecoder.canBeDecoded(bytes, byteBuffer);
+    }
+
+    @Override
+    public byte[] merge(byte[] bytes, @NotNull ByteBuffer byteBuffer) {
+        return encoderDecoder.merge(bytes, byteBuffer);
     }
 }

@@ -9,8 +9,11 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -41,9 +44,11 @@ public class Server {
     }
 
     private void startInner() {
-        ServerSocket serverSocket = null;
+        Selector selector = null;
+        ServerSocketChannel serverSocket = null;
         try {
-            serverSocket = new ServerSocket();
+            selector = Selector.open();
+            serverSocket = ServerSocketChannel.open();
         } catch (IOException e) {
             log.error("Cannot create server socket", e);
             System.exit(1);
@@ -51,7 +56,9 @@ public class Server {
 
         try {
             serverSocket.bind(new InetSocketAddress(SERVER_PORT));
-            log.info("Running server on port {}", serverSocket.getLocalPort());
+            serverSocket.configureBlocking(false);
+            serverSocket.register(selector, SelectionKey.OP_ACCEPT);
+            log.info("Running server on port {}", serverSocket.socket().getLocalPort());
         } catch (IOException e) {
             log.error("Cannot bing server socket to the port {}", SERVER_PORT, e);
             System.exit(1);
@@ -59,14 +66,19 @@ public class Server {
 
 
         while (!stopped) {
-            Socket socket;
             try {
-                socket = serverSocket.accept();
+                selector.select();
+                Set<SelectionKey> selectionKeys = selector.selectedKeys();
+                for (SelectionKey key : selectionKeys) {
+                    if (key.isAcceptable()) {
+                        SocketChannel socketChannel = serverSocket.accept();
+                        socketChannel.configureBlocking(false);
+                        connectionHandler.handleConnection(socketChannel);
+                    }
+                }
             } catch (IOException e) {
-                log.error("Error while accepting connection", e);
-                continue;
+                log.error("Error while handling connection", e);
             }
-            connectionHandler.handleConnection(socket);
         }
     }
 
